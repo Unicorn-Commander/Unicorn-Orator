@@ -1,6 +1,0 @@
-git+https://github.com/m-bain/whisperx.git
-fastapi==0.110.0
-uvicorn==0.27.1
-python-multipart==0.0.9
-# Let WhisperX determine the torch version
-# torch and torchaudio will be installed as dependencies
