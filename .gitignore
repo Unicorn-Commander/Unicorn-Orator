@@ -1,0 +1,56 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Docker volumes
+volumes/
+*.volume
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+models/
+
+# Audio test files
+test-audio.wav
+test-output.wav
+*.mp3
+*.wav
+*.flac
+*.m4a
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+*.old

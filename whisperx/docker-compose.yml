@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  whisperx:
+    build: .
+    container_name: whisperx-dev
+    ports:
+      - "9000:9000"
+    environment:
+      WHISPER_MODEL: "base"
+      DEVICE: "cpu"
+      COMPUTE_TYPE: "int8"
+    volumes:
+      - ./models:/app/models
