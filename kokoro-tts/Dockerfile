@@ -9,14 +9,17 @@ RUN apt-get update && apt-get install -y \
     libtbb12 \
     ocl-icd-libopencl1 \
     espeak-ng \
-    # Intel GPU dependencies
-    intel-opencl-icd \
-    clinfo \
-    vainfo \
     # Additional libraries for OpenVINO
     libpugixml1v5 \
     libusb-1.0-0 \
     libnuma1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Try to install Intel GPU tools (may not be available on all systems)
+RUN apt-get update && apt-get install -y \
+    clinfo \
+    vainfo \
+    || true \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

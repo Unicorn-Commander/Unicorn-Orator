@@ -1,0 +1,35 @@
+FROM python:3.10-slim
+
+# Install minimal dependencies for CPU-only build
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    libgomp1 \
+    espeak-ng \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy CPU-optimized requirements
+COPY requirements.cpu.txt requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Create required directories
+RUN mkdir -p models cache
+
+# Copy application files
+COPY . .
+
+# Set environment variables for CPU optimization
+ENV DEVICE=CPU
+ENV OMP_NUM_THREADS=4
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8880
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8880/health || exit 1
+
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8880"]

@@ -1,0 +1,7 @@
+fastapi==0.110.0
+uvicorn==0.27.1
+onnxruntime==1.19.2
+numpy>=1.26.4
+scipy>=1.11.4
+soundfile==0.12.1
+misaki

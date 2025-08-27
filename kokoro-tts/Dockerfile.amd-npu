@@ -1,0 +1,39 @@
+FROM python:3.10-slim
+
+# Install dependencies for AMD NPU
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    wget \
+    libgomp1 \
+    espeak-ng \
+    # AMD NPU dependencies
+    libamd64-0 \
+    libllvm14 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy NPU-optimized requirements
+COPY requirements.npu.txt requirements.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Create required directories
+RUN mkdir -p models npu_models cache
+
+# Copy application files and NPU runtime
+COPY . .
+COPY npu/ ./npu/
+
+# Set environment variables for NPU optimization
+ENV DEVICE=NPU
+ENV NPU_DEVICE_ID=0
+ENV PYTHONUNBUFFERED=1
+
+EXPOSE 8880
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8880/health || exit 1
+
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8880"]
