@@ -272,6 +272,17 @@ async def health():
         "voices_loaded": len(voices) > 0
     }
 
+@app.get("/api/status")
+async def api_status():
+    """Return current backend status"""
+    return {
+        "status": "healthy",
+        "device": device,  # This will be "IGPU" for Intel iGPU
+        "backend": "OpenVINO" if device in ["GPU", "IGPU"] else "ONNX Runtime",
+        "model": "kokoro-v0_19",
+        "voices": len(voices)
+    }
+
 @app.get("/")
 async def root():
     """API information endpoint"""
@@ -296,6 +307,383 @@ async def web_interface():
         return HTMLResponse(content=html_content)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Web interface not found")
+
+@app.get("/dialogue")
+async def dialogue_interface():
+    """Dialogue generator interface"""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Dialogue Generator - Unicorn Orator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-4">🎭 Dialogue Generator</h1>
+        <p class="mb-8">Create multi-voice dialogues with different characters</p>
+        <div class="bg-white/10 backdrop-blur rounded-lg p-6">
+            <h2 class="text-xl mb-4">Coming Soon!</h2>
+            <p>The dialogue generator tool server is available at port 13060</p>
+            <p class="mt-4">Features:</p>
+            <ul class="list-disc ml-6 mt-2">
+                <li>Multiple character voices</li>
+                <li>Automatic voice assignment</li>
+                <li>Script parsing</li>
+                <li>Export to audio</li>
+            </ul>
+            <a href="/web" class="inline-block mt-6 px-4 py-2 bg-purple-600 rounded hover:bg-purple-700">← Back to Main</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+@app.get("/podcast")
+async def podcast_interface():
+    """Podcast creator interface"""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Podcast Creator - Unicorn Orator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-4">📻 Podcast Creator</h1>
+        <p class="mb-8">Generate professional podcasts with intro, segments, and outro</p>
+        <div class="bg-white/10 backdrop-blur rounded-lg p-6">
+            <h2 class="text-xl mb-4">Coming Soon!</h2>
+            <p>The podcast creator tool server is available at port 13062</p>
+            <p class="mt-4">Features:</p>
+            <ul class="list-disc ml-6 mt-2">
+                <li>Professional intro/outro</li>
+                <li>Multiple hosts and guests</li>
+                <li>Background music</li>
+                <li>Episode management</li>
+            </ul>
+            <a href="/web" class="inline-block mt-6 px-4 py-2 bg-purple-600 rounded hover:bg-purple-700">← Back to Main</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+@app.get("/admin")
+async def admin_interface():
+    """Admin control panel"""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel - Unicorn Orator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8">🦄 Unicorn Orator Admin Panel</h1>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Main Service -->
+            <div class="bg-white/10 backdrop-blur rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Main TTS Service</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span>Status:</span>
+                        <span id="main-status" class="text-green-400">● Running</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Port:</span>
+                        <span>8885</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Backend:</span>
+                        <span id="backend-info">Intel iGPU (OpenVINO)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tool Servers -->
+            <div class="bg-white/10 backdrop-blur rounded-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Tool Servers</h2>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span>🎭 Dialogue (13060)</span>
+                        <div>
+                            <span id="dialogue-status" class="mr-3">checking...</span>
+                            <button onclick="toggleService('dialogue')" class="px-3 py-1 bg-purple-600 rounded hover:bg-purple-700">Toggle</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>🎙️ Transcription (13061)</span>
+                        <div>
+                            <span id="transcription-status" class="mr-3">checking...</span>
+                            <button onclick="toggleService('transcription')" class="px-3 py-1 bg-purple-600 rounded hover:bg-purple-700">Toggle</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>📻 Podcast (13062)</span>
+                        <div>
+                            <span id="podcast-status" class="mr-3">checking...</span>
+                            <button onclick="toggleService('podcast')" class="px-3 py-1 bg-purple-600 rounded hover:bg-purple-700">Toggle</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-2">
+                    <button onclick="startAllTools()" class="w-full px-4 py-2 bg-green-600 rounded hover:bg-green-700">Start All Tools</button>
+                    <button onclick="stopAllTools()" class="w-full px-4 py-2 bg-red-600 rounded hover:bg-red-700">Stop All Tools</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="mt-8 bg-white/10 backdrop-blur rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Quick Actions</h2>
+            <div class="grid md:grid-cols-4 gap-4">
+                <a href="/web" class="p-4 bg-gradient-to-r from-purple-600/30 to-pink-600/30 rounded-lg hover:from-purple-600/40 hover:to-pink-600/40 text-center">
+                    <div class="text-2xl mb-2">🎤</div>
+                    <div>TTS Interface</div>
+                </a>
+                <a href="/dialogue" class="p-4 bg-gradient-to-r from-blue-600/30 to-purple-600/30 rounded-lg hover:from-blue-600/40 hover:to-purple-600/40 text-center">
+                    <div class="text-2xl mb-2">🎭</div>
+                    <div>Dialogue Tool</div>
+                </a>
+                <a href="/podcast" class="p-4 bg-gradient-to-r from-pink-600/30 to-orange-600/30 rounded-lg hover:from-pink-600/40 hover:to-orange-600/40 text-center">
+                    <div class="text-2xl mb-2">📻</div>
+                    <div>Podcast Tool</div>
+                </a>
+                <a href="/transcribe" class="p-4 bg-gradient-to-r from-green-600/30 to-teal-600/30 rounded-lg hover:from-green-600/40 hover:to-teal-600/40 text-center">
+                    <div class="text-2xl mb-2">🎙️</div>
+                    <div>Transcription</div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Logs -->
+        <div class="mt-8 bg-white/10 backdrop-blur rounded-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Container Logs</h2>
+            <div class="space-y-2">
+                <button onclick="viewLogs('unicorn-orator-standalone')" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">View Main Service Logs</button>
+                <button onclick="viewLogs('orator-dialogue-tool')" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">View Dialogue Logs</button>
+                <button onclick="viewLogs('orator-transcription-tool')" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">View Transcription Logs</button>
+                <button onclick="viewLogs('orator-podcast-tool')" class="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700">View Podcast Logs</button>
+            </div>
+            <pre id="logs-output" class="mt-4 p-4 bg-black/50 rounded text-green-400 text-xs font-mono max-h-64 overflow-y-auto hidden"></pre>
+        </div>
+    </div>
+    
+    <script>
+        // Check service status
+        async function checkStatus() {
+            // Check dialogue
+            try {
+                const res = await fetch('http://localhost:13060/health');
+                document.getElementById('dialogue-status').textContent = res.ok ? '● Running' : '○ Stopped';
+                document.getElementById('dialogue-status').className = res.ok ? 'text-green-400 mr-3' : 'text-red-400 mr-3';
+            } catch {
+                document.getElementById('dialogue-status').textContent = '○ Stopped';
+                document.getElementById('dialogue-status').className = 'text-red-400 mr-3';
+            }
+            
+            // Check transcription
+            try {
+                const res = await fetch('http://localhost:13061/health');
+                document.getElementById('transcription-status').textContent = res.ok ? '● Running' : '○ Stopped';
+                document.getElementById('transcription-status').className = res.ok ? 'text-green-400 mr-3' : 'text-red-400 mr-3';
+            } catch {
+                document.getElementById('transcription-status').textContent = '○ Stopped';
+                document.getElementById('transcription-status').className = 'text-red-400 mr-3';
+            }
+            
+            // Check podcast
+            try {
+                const res = await fetch('http://localhost:13062/health');
+                document.getElementById('podcast-status').textContent = res.ok ? '● Running' : '○ Stopped';
+                document.getElementById('podcast-status').className = res.ok ? 'text-green-400 mr-3' : 'text-red-400 mr-3';
+            } catch {
+                document.getElementById('podcast-status').textContent = '○ Stopped';
+                document.getElementById('podcast-status').className = 'text-red-400 mr-3';
+            }
+            
+            // Check backend
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                document.getElementById('backend-info').textContent = data.backend === 'OpenVINO' ? 'Intel iGPU (OpenVINO)' : 'CPU (ONNX Runtime)';
+            } catch {}
+        }
+        
+        // Toggle service
+        async function toggleService(service) {
+            const containerMap = {
+                'dialogue': 'orator-dialogue-tool',
+                'transcription': 'orator-transcription-tool',
+                'podcast': 'orator-podcast-tool'
+            };
+            
+            const container = containerMap[service];
+            const statusEl = document.getElementById(service + '-status');
+            
+            if (statusEl.textContent.includes('Running')) {
+                await fetch('/api/admin/stop/' + container, {method: 'POST'});
+            } else {
+                await fetch('/api/admin/start/' + container, {method: 'POST'});
+            }
+            
+            setTimeout(checkStatus, 2000);
+        }
+        
+        // Start all tools
+        async function startAllTools() {
+            await fetch('/api/admin/start-all-tools', {method: 'POST'});
+            setTimeout(checkStatus, 3000);
+        }
+        
+        // Stop all tools
+        async function stopAllTools() {
+            await fetch('/api/admin/stop-all-tools', {method: 'POST'});
+            setTimeout(checkStatus, 2000);
+        }
+        
+        // View logs
+        async function viewLogs(container) {
+            const output = document.getElementById('logs-output');
+            output.classList.remove('hidden');
+            output.textContent = 'Fetching logs...';
+            
+            try {
+                const res = await fetch('/api/admin/logs/' + container);
+                const data = await res.json();
+                output.textContent = data.logs || 'No logs available';
+            } catch {
+                output.textContent = 'Failed to fetch logs';
+            }
+        }
+        
+        // Check status on load
+        checkStatus();
+        setInterval(checkStatus, 10000);
+    </script>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+@app.get("/stories")
+async def stories_interface():
+    """Story narration interface"""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Story Narration - Unicorn Orator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-4">📖 Story Narration</h1>
+        <p class="mb-8">Professional voice acting for stories and audiobooks</p>
+        <div class="bg-white/10 backdrop-blur rounded-lg p-6">
+            <h2 class="text-xl mb-4">Voice Acting Service</h2>
+            <p>The story narration tool is available at port 13061</p>
+            <p class="mt-4">Perfect for:</p>
+            <ul class="list-disc ml-6 mt-2">
+                <li>Children's bedtime stories</li>
+                <li>Adult fiction audiobooks</li>
+                <li>Fairy tales with character voices</li>
+                <li>Educational stories</li>
+            </ul>
+            <p class="mt-4 text-sm text-purple-300">💡 Paste your story script and we'll perform the narration with appropriate voices!</p>
+            <a href="/web" class="inline-block mt-6 px-4 py-2 bg-purple-600 rounded hover:bg-purple-700">← Back to Main</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+@app.get("/commercials")
+async def commercials_interface():
+    """Commercial voiceover interface"""
+    html = """<!DOCTYPE html>
+<html>
+<head>
+    <title>Commercial Voiceover - Unicorn Orator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-bold mb-4">📢 Commercial Voiceover</h1>
+        <p class="mb-8">Professional voice synthesis for ads and promos</p>
+        <div class="bg-white/10 backdrop-blur rounded-lg p-6">
+            <h2 class="text-xl mb-4">Voice Acting Service</h2>
+            <p>The commercial voiceover tool is available at port 13063</p>
+            <p class="mt-4">Perfect for:</p>
+            <ul class="list-disc ml-6 mt-2">
+                <li>Radio commercials</li>
+                <li>TV advertisements</li>
+                <li>Web promos</li>
+                <li>Product announcements</li>
+            </ul>
+            <p class="mt-4 text-sm text-purple-300">💡 Provide your ad script and we'll deliver professional voiceover!</p>
+            <a href="/web" class="inline-block mt-6 px-4 py-2 bg-purple-600 rounded hover:bg-purple-700">← Back to Main</a>
+        </div>
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
+
+# Admin API endpoints
+@app.post("/api/admin/start/{container}")
+async def start_container(container: str):
+    """Start a Docker container"""
+    try:
+        result = subprocess.run(["docker", "start", container], capture_output=True, text=True)
+        return {"success": result.returncode == 0, "message": result.stdout or result.stderr}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/stop/{container}")
+async def stop_container(container: str):
+    """Stop a Docker container"""
+    try:
+        result = subprocess.run(["docker", "stop", container], capture_output=True, text=True)
+        return {"success": result.returncode == 0, "message": result.stdout or result.stderr}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/admin/start-all-tools")
+async def start_all_tools():
+    """Start all tool servers"""
+    containers = ["orator-dialogue-tool", "orator-transcription-tool", "orator-podcast-tool"]
+    results = []
+    for container in containers:
+        try:
+            result = subprocess.run(["docker", "start", container], capture_output=True, text=True)
+            results.append({"container": container, "success": result.returncode == 0})
+        except:
+            results.append({"container": container, "success": False})
+    return {"results": results}
+
+@app.post("/api/admin/stop-all-tools")
+async def stop_all_tools():
+    """Stop all tool servers"""
+    containers = ["orator-dialogue-tool", "orator-transcription-tool", "orator-podcast-tool"]
+    results = []
+    for container in containers:
+        try:
+            result = subprocess.run(["docker", "stop", container], capture_output=True, text=True)
+            results.append({"container": container, "success": result.returncode == 0})
+        except:
+            results.append({"container": container, "success": False})
+    return {"results": results}
+
+@app.get("/api/admin/logs/{container}")
+async def get_container_logs(container: str):
+    """Get Docker container logs"""
+    try:
+        result = subprocess.run(
+            ["docker", "logs", "--tail", "100", container],
+            capture_output=True, text=True
+        )
+        return {"logs": result.stdout or result.stderr}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # Mount static files for web interface assets
 if os.path.exists("static"):

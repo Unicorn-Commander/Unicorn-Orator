@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  dialogue-tool:
+    image: python:3.10-slim
+    container_name: orator-dialogue-tool
+    working_dir: /app
+    volumes:
+      - ./dialogue_tool.py:/app/dialogue_tool.py
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      - PORT=13060
+      - ORATOR_URL=http://unicorn-orator-standalone:8880
+    ports:
+      - "13060:13060"
+    command: |
+      bash -c "
+        pip install --no-cache-dir fastapi uvicorn httpx pydantic &&
+        python dialogue_tool.py
+      "
+    networks:
+      - orator-tools
+    restart: unless-stopped
+
+  story-narration-tool:
+    image: python:3.10-slim
+    container_name: orator-story-tool
+    working_dir: /app
+    volumes:
+      - ./story_narration_tool.py:/app/story_narration_tool.py
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      - PORT=13061
+      - ORATOR_URL=http://unicorn-orator-standalone:8880
+    ports:
+      - "13061:13061"
+    command: |
+      bash -c "
+        pip install --no-cache-dir fastapi uvicorn httpx pydantic &&
+        python story_narration_tool.py
+      "
+    networks:
+      - orator-tools
+    restart: unless-stopped
+  
+  commercial-tool:
+    image: python:3.10-slim
+    container_name: orator-commercial-tool
+    working_dir: /app
+    volumes:
+      - ./commercial_tool.py:/app/commercial_tool.py
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      - PORT=13063
+      - ORATOR_URL=http://unicorn-orator-standalone:8880
+    ports:
+      - "13063:13063"
+    command: |
+      bash -c "
+        pip install --no-cache-dir fastapi uvicorn httpx pydantic &&
+        python commercial_tool.py
+      "
+    networks:
+      - orator-tools
+    restart: unless-stopped
+
+  podcast-tool:
+    image: python:3.10-slim
+    container_name: orator-podcast-tool
+    working_dir: /app
+    volumes:
+      - ./podcast_tool.py:/app/podcast_tool.py
+      - ./requirements.txt:/app/requirements.txt
+    environment:
+      - PORT=13062
+      - ORATOR_URL=http://unicorn-orator-standalone:8880
+    ports:
+      - "13062:13062"
+    command: |
+      bash -c "
+        pip install --no-cache-dir fastapi uvicorn httpx pydantic &&
+        python podcast_tool.py
+      "
+    networks:
+      - orator-tools
+    restart: unless-stopped
+
+networks:
+  orator-tools:
+    external: true
+    name: unicorn-network

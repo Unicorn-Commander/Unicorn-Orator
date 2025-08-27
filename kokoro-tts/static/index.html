@@ -380,12 +380,67 @@
                             </span>
                         </label>
                         <select id="backend" class="w-full p-2 glass-input input-field rounded-lg text-white" disabled>
-                            <option value="cpu" selected>CPU (ONNX Runtime)</option>
-                            <option value="openvino">Intel iGPU (OpenVINO)</option>
+                            <option value="cpu">CPU (ONNX Runtime)</option>
+                            <option value="openvino" selected>Intel iGPU (OpenVINO)</option>
                         </select>
-                        <p class="text-xs text-purple-300 mt-1">Currently using CPU backend</p>
+                        <p id="backendStatus" class="text-xs text-purple-300 mt-1">Currently using Intel iGPU (OpenVINO)</p>
                     </div>
                 </div>
+            </div>
+
+            <!-- Voice Synthesis Tools -->
+            <div class="glass-effect rounded-xl p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                    </svg>
+                    Voice Synthesis Tools
+                    <span class="text-xs bg-purple-500/20 px-2 py-1 rounded-full">VOICE ACTING</span>
+                </h3>
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <button onclick="openDialogueTool()" class="p-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 hover:from-blue-600/30 hover:to-purple-600/30 rounded-lg transition-all duration-200 text-left">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">🎭</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">Dialogue</p>
+                            <p class="text-xs text-purple-300 mt-1">Multi-character scenes</p>
+                        </div>
+                    </button>
+                    
+                    <button onclick="openPodcastTool()" class="p-4 bg-gradient-to-r from-pink-600/20 to-orange-600/20 hover:from-pink-600/30 hover:to-orange-600/30 rounded-lg transition-all duration-200 text-left">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">📻</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">Podcast</p>
+                            <p class="text-xs text-purple-300 mt-1">Professional podcasts</p>
+                        </div>
+                    </button>
+                    
+                    <button onclick="openStoryTool()" class="p-4 bg-gradient-to-r from-green-600/20 to-teal-600/20 hover:from-green-600/30 hover:to-teal-600/30 rounded-lg transition-all duration-200 text-left">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">📖</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">Stories</p>
+                            <p class="text-xs text-purple-300 mt-1">Kids & adult narration</p>
+                        </div>
+                    </button>
+                    
+                    <button onclick="openCommercialTool()" class="p-4 bg-gradient-to-r from-orange-600/20 to-red-600/20 hover:from-orange-600/30 hover:to-red-600/30 rounded-lg transition-all duration-200 text-left">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-2xl">📢</span>
+                        </div>
+                        <div>
+                            <p class="font-medium">Commercials</p>
+                            <p class="text-xs text-purple-300 mt-1">Ads & promos</p>
+                        </div>
+                    </button>
+                </div>
+                <p class="text-xs text-purple-400 mt-4 text-center">
+                    💡 Tip: Paste your script from AI or write your own, and Unicorn Orator will perform the voice acting!
+                </p>
             </div>
 
             <!-- Generate Button -->
@@ -481,13 +536,36 @@
         let currentAudioBlob = null;
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             loadVoices();
             updateCharCount();
             // Load saved theme or default to magic
             const savedTheme = localStorage.getItem('unicorn-orator-theme') || 'magic';
             setTheme(savedTheme);
+            // Check actual backend status
+            await checkBackendStatus();
         });
+        
+        // Check backend status
+        async function checkBackendStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                const backend = document.getElementById('backend');
+                const backendStatus = document.getElementById('backendStatus');
+                
+                if (data.device === 'GPU' || data.device === 'IGPU') {
+                    backend.value = 'openvino';
+                    backendStatus.textContent = 'Currently using Intel iGPU (OpenVINO)';
+                } else {
+                    backend.value = 'cpu';
+                    backendStatus.textContent = 'Currently using CPU (ONNX Runtime)';
+                }
+            } catch (error) {
+                console.log('Could not fetch backend status');
+            }
+        }
 
         // Event Listeners
         textInput.addEventListener('input', updateCharCount);
@@ -785,6 +863,23 @@
                 btn.classList.remove('bg-white/30');
             });
             event.target.closest('.theme-btn')?.classList.add('bg-white/30');
+        }
+
+        // Tool launchers
+        function openDialogueTool() {
+            window.open('/dialogue', '_blank');
+        }
+        
+        function openPodcastTool() {
+            window.open('/podcast', '_blank');
+        }
+        
+        function openStoryTool() {
+            window.open('/stories', '_blank');
+        }
+        
+        function openCommercialTool() {
+            window.open('/commercials', '_blank');
         }
 
         // Keyboard shortcuts
