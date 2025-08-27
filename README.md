@@ -28,6 +28,14 @@
 - **🔌 OpenAI Compatible**: Drop-in replacement, no code changes needed
 - **🐳 Production Ready**: Docker image available, battle-tested deployment
 
+## 🖼️ Web Interface
+
+<div align="center">
+  <img src="assets/unicorn-orator-interface.png" alt="Unicorn Orator Web Interface" width="600"/>
+  <br>
+  <i>Clean, intuitive interface with 50+ voices and advanced settings</i>
+</div>
+
 ## 🚀 Quick Start
 
 ### Using Docker (Recommended)
