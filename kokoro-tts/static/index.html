@@ -89,21 +89,27 @@
         
         /* Improved Magic Unicorn theme text boxes */
         body.theme-magic .glass-input {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(12px);
             transition: all 0.3s ease;
         }
         
         body.theme-magic .glass-input:hover {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
         
         body.theme-magic .glass-input:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(147, 51, 234, 0.5);
-            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.2), 0 0 20px rgba(147, 51, 234, 0.1);
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(147, 51, 234, 0.6);
+            box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.25), 0 0 20px rgba(147, 51, 234, 0.15);
+        }
+        
+        /* Force dark text in main text input */
+        #textInput {
+            color: #1a1a1a !important;
+            font-weight: 600 !important;
         }
         .gradient-text {
             background: linear-gradient(-45deg, #6366f1, #8b5cf6, #ec4899, #3b82f6);
@@ -213,9 +219,10 @@
                 
                 <textarea 
                     id="textInput"
-                    class="w-full h-32 p-4 glass-input input-field rounded-xl text-white placeholder-purple-300 resize-none focus:outline-none transition-all duration-200"
+                    class="w-full h-32 p-4 glass-input input-field rounded-xl placeholder-purple-300 resize-none focus:outline-none transition-all duration-200"
                     placeholder="Enter the text you want to convert to speech..."
                     maxlength="1000"
+                    style="color: #1a1a1a !important; font-weight: 600 !important; background: rgba(255, 255, 255, 0.85) !important;"
                 ></textarea>
                 
                 <div class="flex justify-between items-center mt-4 text-sm text-purple-300">
@@ -388,7 +395,8 @@
                 </div>
             </div>
 
-            <!-- Voice Synthesis Tools -->
+            <!-- Voice Synthesis Tools - Hidden for MVP -->
+            <!-- Uncomment this section when specialized tools are ready for production
             <div class="glass-effect rounded-xl p-6 mb-8">
                 <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -442,6 +450,7 @@
                     💡 Tip: Paste your script from AI or write your own, and Unicorn Orator will perform the voice acting!
                 </p>
             </div>
+            -->
 
             <!-- Generate Button -->
             <div class="text-center mb-8">
@@ -592,9 +601,11 @@
             hideAudio();
         }
 
-        function loadSample() {
-            textInput.value = "Welcome to Unicorn Commander Pro! This is a demonstration of our high-quality text-to-speech synthesis powered by Kokoro TTS and Magic Unicorn technology.";
+        async function loadSample() {
+            textInput.value = "Welcome to Unicorn Commander! This is a demonstration of our high-quality text-to-speech synthesis powered by Kokoro TTS and Magic Unicorn technology.";
             updateCharCount();
+            // Automatically generate speech after loading sample
+            await generateSpeech();
         }
 
         function updateSpeedValue() {

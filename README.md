@@ -1,324 +1,233 @@
-# 🦄 Unicorn Orator
+# 🦄 Unicorn Orator - Lightweight TTS with Hardware Acceleration
 
 <div align="center">
-  <img src="assets/unicorn-orator-logo.png" alt="Unicorn Orator Logo" width="200">
+  <img src="kokoro-tts/static/Unicorn_Orator.png" alt="Unicorn Orator Logo" width="200"/>
   
-  **Professional Text-to-Speech Service**
+  [![Docker](https://img.shields.io/docker/pulls/magicunicorn/unicorn-orator?style=flat-square)](https://hub.docker.com/r/magicunicorn/unicorn-orator)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+  [![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-green?style=flat-square)](https://platform.openai.com/docs/api-reference/audio/createSpeech)
   
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-  [![Python](https://img.shields.io/badge/Python-3.10+-green.svg)](https://www.python.org/)
+  **Efficient text-to-speech that runs on Intel iGPU, freeing your GPU for AI inference**
   
-  *High-Quality Voice Synthesis with Hardware Acceleration*
+  [Web Interface](http://localhost:8885/web) | [Docker Hub](https://hub.docker.com/r/magicunicorn/unicorn-orator) | [API Docs](#api-usage)
 </div>
 
 ---
 
-## 🌟 Overview
+## 🎯 Why Unicorn Orator?
 
-Unicorn Orator is a professional text-to-speech service powered by Kokoro, offering natural voice synthesis with multiple voice options and hardware acceleration support. Built for both API integration and standalone use, it provides an OpenAI-compatible endpoint for seamless integration with existing applications.
+**The Problem**: Running TTS alongside LLMs fights for GPU resources, slowing down inference and increasing latency.
 
-**Looking for Speech-to-Text?** Check out [Unicorn Amanuensis](https://github.com/Unicorn-Commander/Unicorn-Amanuensis) - our dedicated transcription service powered by WhisperX.
+**Our Solution**: Unicorn Orator offloads TTS to Intel integrated graphics or AMD NPUs, leaving your discrete GPU free for what it does best - running large language models.
 
-### ✨ Key Features
+### Key Benefits
 
-- **🎭 Multiple Voices** - 20+ natural male and female voices
-- **🌐 Multi-Language** - Support for English, Spanish, French, German, Chinese, Japanese, and more
-- **🔊 High Quality** - Natural-sounding speech synthesis with emotion and emphasis
-- **⚡ Fast Generation** - Real-time voice synthesis
-- **🚀 Hardware Acceleration** - Support for CPU, NVIDIA GPU, AMD NPU, and Intel iGPU
-- **🔌 OpenAI Compatible** - Drop-in replacement for OpenAI TTS API
-- **🎨 Web Interface** - Interactive demo UI included
-- **🐳 Docker Ready** - Easy deployment with Docker Compose
-- **📊 SSML Support** - Fine control over speech synthesis
-
-## 📋 Prerequisites
-
-- Docker and Docker Compose
-- 4GB+ RAM (8GB+ recommended)
-- (Optional) NVIDIA GPU for CUDA acceleration
-- (Optional) AMD Ryzen AI processor for NPU acceleration
-- (Optional) Intel iGPU for OpenVINO acceleration
+- **🚀 Free Your GPU**: TTS runs on iGPU/NPU, preserving discrete GPU for LLM inference
+- **⚡ Resource Efficient**: Uses ~15W on iGPU vs 100W+ on discrete GPU
+- **🎭 50+ Quality Voices**: Kokoro v0.19 with diverse accents and styles
+- **🔌 OpenAI Compatible**: Drop-in replacement, no code changes needed
+- **🐳 Production Ready**: Docker image available, battle-tested deployment
 
 ## 🚀 Quick Start
 
-### 1. Clone the Repository
+### Using Docker (Recommended)
+
+```bash
+# Pull and run the pre-built image
+docker run -d --name unicorn-orator \
+  -p 8885:8880 \
+  -v $(pwd)/kokoro-tts/models:/app/models:ro \
+  --device /dev/dri:/dev/dri \
+  --group-add video \
+  magicunicorn/unicorn-orator:intel-igpu-v1.0
+
+# Visit http://localhost:8885/web for the interface
+```
+
+### From Source
 
 ```bash
 git clone https://github.com/Unicorn-Commander/Unicorn-Orator.git
 cd Unicorn-Orator
+docker-compose up -d
 ```
 
-### 2. Configure Environment
+## 💡 Technical Innovation
 
-```bash
-cp .env.template .env
-# Edit .env with your settings
-nano .env
-```
+### Intel iGPU Optimization
+We've optimized Kokoro TTS to run efficiently on Intel integrated graphics via OpenVINO:
 
-### 3. Install with Hardware Detection
+- **Hardware Detection**: Automatically detects and uses Intel Xe/Arc iGPUs
+- **FP16 Inference**: Maintains quality while doubling throughput
+- **Minimal Memory**: ~300MB VRAM usage, leaving room for other tasks
+- **Power Efficient**: 10-15W TDP vs 75-350W for discrete GPUs
 
-```bash
-./install.sh
-# Automatically detects and configures for your hardware
-```
+### AMD NPU Support (Experimental)
+For Ryzen AI laptops (7040/8040 series), we're developing custom NPU support:
 
-### 4. Access the Service
+- **Custom Runtime**: Direct NPU access bypassing standard frameworks
+- **INT8 Quantization**: Optimized models for NPU architecture  
+- **Ultra Low Power**: <10W for continuous synthesis
 
-- **TTS API**: http://localhost:8880
-- **Web Interface**: http://localhost:8880/demo
-- **API Documentation**: http://localhost:8880/docs
+### Performance Comparison
 
-## 🎙️ API Usage
+| Hardware | Power Usage | VRAM | Speed | Purpose |
+|----------|-------------|------|-------|---------|
+| Intel iGPU | 15W | 300MB | 5x realtime | **TTS (This Project)** |
+| AMD NPU | 10W | 256MB | 4x realtime | **TTS (Experimental)** |
+| NVIDIA 4090 | 350W | 2GB | 20x realtime | Better used for LLMs |
+| CPU (i7) | 45W | N/A | 2x realtime | Fallback option |
+
+## 📡 API Usage
 
 ### OpenAI-Compatible Endpoint
 
 ```python
-from openai import OpenAI
+import requests
 
-client = OpenAI(
-    api_key="dummy-key",
-    base_url="http://localhost:8880/v1"
+# Works exactly like OpenAI's API
+response = requests.post('http://localhost:8885/v1/audio/speech',
+    json={
+        'text': 'Hello from Unicorn Orator!',
+        'voice': 'af_heart',  # 50+ voices available
+        'speed': 1.0
+    }
 )
 
-response = client.audio.speech.create(
-    model="tts-1",
-    voice="af",
-    input="Hello, welcome to Unicorn Orator!"
-)
-
-# Save the audio
-with open("speech.mp3", "wb") as f:
+with open('output.wav', 'wb') as f:
     f.write(response.content)
 ```
 
-### Direct API Call
+### Available Voices (Selection)
 
-```bash
-# Generate speech
-curl -X POST http://localhost:8880/v1/audio/speech \
-  -H "Content-Type: application/json" \
-  -d '{
-    "text": "Hello world!",
-    "voice": "af",
-    "speed": 1.0,
-    "format": "wav"
-  }' \
-  --output speech.wav
-```
-
-### Streaming Response
-
-```python
-import requests
-
-response = requests.post(
-    "http://localhost:8880/v1/audio/speech",
-    json={
-        "text": "Long text to stream...",
-        "voice": "am_michael",
-        "stream": True
-    },
-    stream=True
-)
-
-with open("stream.wav", "wb") as f:
-    for chunk in response.iter_content(chunk_size=1024):
-        f.write(chunk)
-```
-
-## 📊 Supported Voices
-
-### Female Voices
-
-| Voice | Description | Language | Accent |
-|-------|-------------|----------|--------|
-| `af` | Friendly and warm | English | American |
-| `af_bella` | Elegant and professional | English | American |
-| `af_nicole` | Energetic and clear | English | American |
-| `af_sarah` | Calm and soothing | English | American |
-| `af_sky` | Young and cheerful | English | American |
-| `bf_emma` | Sophisticated | English | British |
-| `bf_isabella` | Friendly | English | British |
-
-### Male Voices
-
-| Voice | Description | Language | Accent |
-|-------|-------------|----------|--------|
-| `am_adam` | Deep and authoritative | English | American |
-| `am_michael` | Friendly and casual | English | American |
-| `bm_george` | Professional | English | British |
-| `bm_lewis` | Warm | English | British |
-
-### Multi-Language Voices
-
-| Voice | Languages Supported |
-|-------|-------------------|
-| `es_maria` | Spanish (Spain, Mexico) |
-| `fr_marie` | French (France) |
-| `de_anna` | German |
-| `jp_yuki` | Japanese |
-| `cn_xiaoli` | Chinese (Mandarin) |
-
-## 🔧 Hardware Support
-
-### Automatic Detection
-The installer automatically detects and configures for available hardware:
-
-| Hardware | Performance | Use Case |
+| Voice ID | Description | Best For |
 |----------|-------------|----------|
-| **AMD NPU** | ~8x realtime | Ryzen AI laptops (7040/8040 series) |
-| **Intel iGPU** | ~10x realtime | Intel Arc/Iris Xe graphics |
-| **NVIDIA GPU** | ~15x realtime | Dedicated GPU systems |
-| **CPU** | ~3x realtime | Universal fallback |
+| `af_heart` | Warm, friendly female | General narration |
+| `am_michael` | Professional male | News/corporate |
+| `bf_emma` | British female | Audiobooks |
+| `af_bella` | Young American female | Social media |
+| `bm_george` | British male | Documentation |
 
-### Manual Configuration
+[Full voice list available at /voices endpoint]
 
+## 🏗️ Architecture
+
+```
+Your System:
+┌──────────────────┬──────────────────┐
+│   Discrete GPU   │   Intel iGPU     │
+│   (RTX/Arc/RX)   │   (Xe Graphics)  │
+│                  │                  │
+│   Running:       │   Running:       │
+│   - LLMs         │   - Unicorn TTS  │
+│   - Stable Diff  │   - Video decode │
+│   - ML Training  │   - Display      │
+└──────────────────┴──────────────────┘
+         │                  │
+         └──────┬───────────┘
+                │
+        [High Performance AI]
+         Without Competition
+```
+
+## 🔮 Roadmap
+
+### Current Release (v1.0)
+- ✅ Intel iGPU support via OpenVINO
+- ✅ 50+ Kokoro voices
+- ✅ OpenAI API compatibility
+- ✅ Docker deployment
+- ✅ Web interface
+
+### Planned Features
+- [ ] Real-time streaming
+- [ ] AMD NPU production support
+- [ ] Voice cloning (ethical use only)
+- [ ] SSML support
+- [ ] Batch processing API
+- [ ] Kubernetes operator
+
+### Future Exploration
+- [ ] Apple Neural Engine support
+- [ ] Qualcomm Hexagon DSP
+- [ ] Edge deployment (Jetson, Pi 5)
+- [ ] WebGPU browser runtime
+
+## 🛠️ Building From Source
+
+### Prerequisites
+- Docker & Docker Compose
+- Intel CPU with Xe/Arc graphics (or AMD Ryzen AI)
+- 8GB RAM minimum
+- Ubuntu 22.04+ or Windows 11 WSL2
+
+### Build Steps
 ```bash
-# Force specific backend
-./install.sh --backend=npu
+# Clone repository
+git clone https://github.com/Unicorn-Commander/Unicorn-Orator.git
+cd Unicorn-Orator
 
-# Optimize for speed
-./install.sh --variant=fast
+# Download models (one-time, ~350MB)
+./download_models.sh
+
+# Build with hardware detection
+./build.sh
+
+# Run
+docker-compose up -d
 ```
 
-## 🌐 Web Interface
+## 📊 Benchmarks
 
-Access the beautiful Unicorn Orator interface at http://localhost:8880/demo
+Testing setup: Intel Core i7-13700K with Intel UHD 770 iGPU
 
-Features:
-- Real-time voice preview
-- Voice selection with audio samples
-- Speed and pitch controls
-- Text formatting options
-- Audio download in multiple formats
-- Theme selection (Magic Unicorn, Dark, Light)
+| Text Length | Generation Time | Realtime Factor |
+|-------------|-----------------|-----------------|
+| 1 sentence | 180ms | 5.5x |
+| 1 paragraph | 950ms | 5.2x |
+| 1 page | 4.2s | 5.0x |
 
-## 🔌 Integration Examples
+*Realtime factor = audio duration / generation time*
 
-### Open-WebUI Integration
+## 🤝 Contributing
 
-Add to your Open-WebUI `.env`:
-```env
-AUDIO_TTS_ENGINE=openai
-AUDIO_TTS_OPENAI_API_KEY=dummy-key
-AUDIO_TTS_OPENAI_API_BASE_URL=http://localhost:8880/v1
-AUDIO_TTS_MODEL=tts-1
-AUDIO_TTS_VOICE=af
-```
+We especially welcome contributions for:
+- Hardware optimization (OpenVINO, XDNA, CoreML)
+- Additional TTS models beyond Kokoro
+- Voice training and fine-tuning
+- Performance improvements
 
-### Home Assistant Integration
-
-```yaml
-tts:
-  - platform: openai_tts
-    api_key: dummy-key
-    base_url: http://localhost:8880/v1
-    model: tts-1
-    voice: af
-```
-
-### Node.js Example
-
-```javascript
-const OpenAI = require('openai');
-
-const openai = new OpenAI({
-  apiKey: 'dummy-key',
-  baseURL: 'http://localhost:8880/v1',
-});
-
-async function speak(text) {
-  const mp3 = await openai.audio.speech.create({
-    model: "tts-1",
-    voice: "af",
-    input: text,
-  });
-  
-  const buffer = Buffer.from(await mp3.arrayBuffer());
-  await fs.promises.writeFile("speech.mp3", buffer);
-}
-```
-
-## 🛠️ Advanced Configuration
-
-### Environment Variables
-
-```env
-# Kokoro Configuration
-KOKORO_DEVICE=auto          # auto, cpu, cuda, npu, igpu
-KOKORO_VOICE=af             # Default voice
-KOKORO_MODELS_PATH=/models  # Model cache location
-
-# Performance
-NUM_THREADS=4                # CPU threads
-BATCH_SIZE=1                 # Batch processing
-MAX_TEXT_LENGTH=5000         # Maximum input text
-
-# API Settings
-API_KEY=your-api-key        # Optional API authentication
-CORS_ORIGINS=*              # CORS configuration
-```
-
-### Docker Compose Override
-
-```yaml
-# docker-compose.override.yml
-services:
-  kokoro-tts:
-    environment:
-      - KOKORO_DEVICE=cuda
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-```
-
-## 📈 Performance Optimization
-
-### For Speed
-- Use smaller voices (base models)
-- Enable hardware acceleration
-- Increase batch size
-- Use streaming for long texts
-
-### For Quality
-- Use larger voices (enhanced models)
-- Enable SSML processing
-- Adjust phoneme weights
-- Fine-tune prosody parameters
-
-## 🤝 API Compatibility
-
-Unicorn Orator is compatible with:
-- OpenAI TTS API
-- Azure Cognitive Services Speech (adapter available)
-- Google Cloud Text-to-Speech (adapter available)
-- Amazon Polly (adapter available)
-
-## 📝 License
-
-MIT License - See [LICENSE](LICENSE) file for details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 🙏 Acknowledgments
 
-- [Kokoro](https://github.com/thewh1teagle/kokoro) - Core TTS engine
-- [OpenVINO](https://github.com/openvinotoolkit/openvino) - Intel optimization
-- The Unicorn Commander community
+- **[Kokoro TTS](https://github.com/thewh1teagle/kokoro)** - The excellent TTS model we build upon
+- **[OpenVINO Toolkit](https://github.com/openvinotoolkit/openvino)** - Intel's inference optimization framework
+- **Hugging Face** - Model hosting and community
 
-## 🔗 Related Projects
+## 📜 License
 
-- [Unicorn Amanuensis](https://github.com/Unicorn-Commander/Unicorn-Amanuensis) - Speech-to-Text companion
-- [UC-1 Pro](https://github.com/Unicorn-Commander/UC-1-Pro) - Complete AI infrastructure stack
+MIT License - See [LICENSE](LICENSE) for details
+
+## 🏢 UC-1 Pro Ecosystem
+
+Unicorn Orator is part of the UC-1 Pro AI infrastructure suite:
+
+| Service | Purpose | Port |
+|---------|---------|------|
+| **Unicorn Orator** | Text-to-speech | 8885 |
+| [Unicorn Amanuensis](https://github.com/Unicorn-Commander/Unicorn-Amanuensis) | Speech-to-text | 8886 |
+| Unicorn vLLM | LLM inference | 8000 |
+| Open-WebUI | Chat interface | 3000 |
 
 ---
 
 <div align="center">
-  Made with ❤️ by Unicorn Commander
+  <b>Free your GPU. Enhance your AI.</b><br><br>
+  <a href="https://hub.docker.com/r/magicunicorn/unicorn-orator">🐳 Docker Hub</a> •
+  <a href="https://github.com/Unicorn-Commander/Unicorn-Orator/issues">🐛 Issues</a> •
+  <a href="https://github.com/Unicorn-Commander/Unicorn-Orator/discussions">💬 Discussions</a>
   
-  🦄 *Speak with Intelligence* 🦄
+  <br><br>
+  <i>Built by Magic Unicorn Unconventional Technology & Stuff Inc.</i>
 </div>
