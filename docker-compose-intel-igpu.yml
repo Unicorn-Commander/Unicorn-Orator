@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  unicorn-orator:
+    build:
+      context: ./kokoro-tts
+      dockerfile: Dockerfile.intel-igpu
+    container_name: unicorn-orator
+    restart: unless-stopped
+    ports:
+      - "8885:8880"
+    environment:
+      TTS_MODEL: "kokoro"
+      DEFAULT_VOICE: "af"
+      DEVICE: "IGPU"
+      COMPUTE_TYPE: "float16"
+      OPENVINO_PRECISION: "FP16"
+      CACHE_ENABLED: "true"
+      MAX_LENGTH: "500"
+      CORS_ORIGINS: "*"
+      HOST: "0.0.0.0"
+    devices:
+      - /dev/dri:/dev/dri  # Intel iGPU access
+    group_add:
+      - "44"    # video group
+      - "993"   # render group
+    volumes:
+      - orator_models:/app/models
+      - orator_cache:/app/cache
+      - orator_openvino_cache:/app/openvino_cache
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8880/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  orator_models:
+    driver: local
+  orator_cache:
+    driver: local
+  orator_openvino_cache:
+    driver: local
