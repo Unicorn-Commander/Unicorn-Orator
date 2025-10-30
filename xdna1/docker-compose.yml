@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  kokoro-tts:
+    build: .
+    container_name: kokoro-dev
+    ports:
+      - "8880:8880"
+    environment:
+      DEVICE: "IGPU"
+      DEFAULT_VOICE: "af"
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "44"    # video group
+      - "993"   # render group
+    volumes:
+      - ../../volumes/kokoro_models:/app/models
+      - ./static:/app/static
+      - ./phoneme_mapping.json:/app/phoneme_mapping.json
