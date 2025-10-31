@@ -1,0 +1,18 @@
+# XDNA2 Unicorn-Orator Requirements
+
+# Core dependencies
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+numpy>=1.24.0
+soundfile>=0.12.1
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# ONNX Runtime (for fallback)
+onnxruntime>=1.16.0
+
+# Optional: XDNA2 NPU support
+# xrt>=2.21.0  # Requires AMD XDNA2 hardware
