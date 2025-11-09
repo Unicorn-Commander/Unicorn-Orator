@@ -23,9 +23,25 @@ cache/
 *.log
 logs/
 
-# Environment
+# Environment & Secrets
 .env
-.env.local
+.env.*
+!.env.example
+*.key
+*.pem
+*.cert
+*.crt
+*.p12
+*.pfx
+credentials.json
+*credentials*
+*secret*
+*secrets*
+*token*
+*apikey*
+*api_key*
+.secrets/
+secrets/
 
 # IDE
 .vscode/
