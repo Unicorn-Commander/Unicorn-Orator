@@ -1,23 +1,37 @@
 # Unicorn-Orator
 
-Multi-platform Text-to-Speech (TTS) service with automatic NPU acceleration support using Kokoro TTS.
+Multi-platform Text-to-Speech (TTS) service with automatic hardware acceleration support.
 
 ## Overview
 
 Unicorn-Orator automatically detects and uses the best available compute backend:
 
-- **XDNA2**: Strix Halo NPU (AMD Ryzen AI MAX+ 395) - ✅ **PRODUCTION READY** (Phase 3 Complete)
-- **XDNA1**: Phoenix/Hawk Point NPU (AMD Ryzen 7040/8040 series) - *Production*
-- **CPU**: Software fallback for systems without NPU
+### Production Ready ✅
+- **AMD Radeon GPU (gfx1151)**: AMD Radeon 8060S (RDNA 3.5, Strix Halo) - ✅ **0.88× realtime** with VibeVoice-1.5B
+- **XDNA2 NPU**: Strix Halo NPU (AMD Ryzen AI MAX+ 395) - ✅ **32.4× realtime** with Kokoro
+- **XDNA1 NPU**: Phoenix/Hawk Point NPU (AMD Ryzen 7040/8040 series) - ✅ **220× realtime** with Whisper
+
+### Under Development 🔧
+- **XDNA2 NPU + GPU Hybrid**: NPU for LLM layers, GPU for diffusion (in progress)
+- **CPU Fallback**: Software-only mode for systems without acceleration
 
 ## Features
 
-- High-quality neural TTS using Kokoro
-- Multiple voice options
-- Professional-grade audio output
-- Automatic platform detection
-- NPU acceleration when available
-- ONNX Runtime optimizations
+### TTS Models
+- **VibeVoice-1.5B**: Multi-speaker TTS with 3B parameters (GPU-accelerated)
+- **Kokoro**: High-quality single-speaker TTS (NPU-accelerated)
+
+### Hardware Acceleration
+- **GPU Acceleration**: AMD RDNA 3.5 (gfx1151) with hipBLASLt optimizations
+- **NPU Acceleration**: AMD XDNA1/XDNA2 with custom BF16 kernels
+- **Hybrid Mode**: NPU + GPU coordination (experimental)
+- **Automatic Detection**: Selects optimal backend based on hardware
+
+### Quality & Performance
+- Professional-grade audio output (24 kHz, 16-bit)
+- Multiple voice options and styles
+- Near-realtime or better performance
+- Low power consumption (5-45W depending on backend)
 
 ## Architecture
 
