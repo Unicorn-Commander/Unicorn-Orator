@@ -177,31 +177,6 @@
             <p class="text-purple-300 text-sm">Powered by Pocket TTS (Kyutai Labs)</p>
         </div>
 
-        <!-- Hardware Status Bar -->
-        <div class="glass-effect rounded-xl p-3 mb-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <span id="hardwareIcon" class="text-xl">&#9881;&#65039;</span>
-                    <div>
-                        <div class="text-xs text-purple-300">Hardware</div>
-                        <div id="hardwareName" class="font-semibold text-sm">Detecting...</div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div>
-                        <div class="text-xs text-purple-300">Performance</div>
-                        <div id="hardwarePerformance" class="font-semibold text-sm">...</div>
-                    </div>
-                    <div>
-                        <div class="text-xs text-purple-300">Status</div>
-                        <div id="hardwareStatus" class="font-semibold text-sm">
-                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></span>Active
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Main Interface -->
         <div class="max-w-4xl mx-auto">
 
@@ -514,33 +489,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     updateCharCount();
     const savedTheme = localStorage.getItem('unicorn-orator-theme') || 'magic';
     setTheme(savedTheme);
-    await updateHardwareStatus();
-    setInterval(updateHardwareStatus, 10000);
     initHistory();
     checkCloneStatus();
 });
-
-// ================================================================
-// Hardware Status
-// ================================================================
-async function updateHardwareStatus() {
-    try {
-        const response = await fetch('/health');
-        const data = await response.json();
-        const hw = data.hardware || {};
-        const icon = hw.type === 'npu' ? '\u{1F680}' : hw.type === 'igpu' ? '\u{1F48E}' : '\u2699\uFE0F';
-        const color = hw.type === 'npu' ? '#22c55e' : hw.type === 'igpu' ? '#3b82f6' : '#eab308';
-        document.getElementById('hardwareIcon').textContent = icon;
-        const hwName = document.getElementById('hardwareName');
-        hwName.textContent = hw.name || 'CPU';
-        hwName.style.color = color;
-        const perf = document.getElementById('hardwarePerformance');
-        perf.textContent = data.performance || '~10x';
-        perf.style.color = color;
-    } catch (e) {
-        console.error('Hardware status error:', e);
-    }
-}
 
 // ================================================================
 // Voice Loading
@@ -561,8 +512,7 @@ async function loadVoices() {
                 if (!data.voices.includes(voice.id)) return;
                 const option = document.createElement('option');
                 option.value = voice.id;
-                const agentTag = voice.agent ? ` [${voice.agent}]` : '';
-                option.textContent = `${voice.name}${agentTag} ${getQualityStars(voice.quality)}`;
+                option.textContent = `${voice.name} ${getQualityStars(voice.quality)}`;
                 optgroup.appendChild(option);
                 totalCount++;
             });
@@ -603,8 +553,7 @@ function updateVoiceInfo() {
         document.getElementById('voiceInfo').classList.remove('hidden');
         document.getElementById('voiceQuality').textContent = getQualityStars(info.quality);
         const engineLabel = info.engine === 'pocket-tts' ? 'Pocket TTS' : 'Kokoro';
-        const agentLabel = info.agent ? ` | ${info.agent}` : '';
-        document.getElementById('voiceAccent').textContent = `${engineLabel} | ${info.gender}${agentLabel}`;
+        document.getElementById('voiceAccent').textContent = `${engineLabel} | ${info.gender}`;
         document.getElementById('voiceDescription').textContent = info.description;
     } else {
         document.getElementById('voiceInfo').classList.add('hidden');
@@ -752,7 +701,11 @@ async function generateSpeech() {
             const script = dialogueInput.value.trim();
             if (!script) { showStatus('Enter a dialogue script first', 'error'); setLoading(false); return; }
             textPreview = script;
-            // Build voice_map from table if parsed
+            // Auto-parse if user hasn't parsed yet
+            if (!document.querySelectorAll('.char-voice-select').length) {
+                await parseDialogue();
+            }
+            // Build voice_map from table
             let voice_map = {};
             document.querySelectorAll('.char-voice-select').forEach(sel => {
                 voice_map[sel.dataset.character] = sel.value;

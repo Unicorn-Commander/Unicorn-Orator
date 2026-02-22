@@ -4,38 +4,34 @@ const voiceData = {
   "jean": {
     name: "Jean",
     quality: 5,
-    description: "Deep, authoritative male voice. Sgt. Carter Knox's voice.",
+    description: "Deep, authoritative male voice",
     gender: "male",
     accent: "Pocket TTS",
-    engine: "pocket-tts",
-    agent: "Carter Knox"
+    engine: "pocket-tts"
   },
   "javert": {
     name: "Javert",
     quality: 5,
-    description: "Commanding, stern male voice. The General's voice.",
+    description: "Commanding, stern male voice",
     gender: "male",
     accent: "Pocket TTS",
-    engine: "pocket-tts",
-    agent: "The General"
+    engine: "pocket-tts"
   },
   "marius": {
     name: "Marius",
     quality: 5,
-    description: "Energetic, youthful male voice. Gunny's voice.",
+    description: "Energetic, youthful male voice",
     gender: "male",
     accent: "Pocket TTS",
-    engine: "pocket-tts",
-    agent: "Gunny"
+    engine: "pocket-tts"
   },
   "alba": {
     name: "Alba",
     quality: 5,
-    description: "Clear, articulate voice. Detective Holmes' voice. Default Pocket TTS voice.",
+    description: "Clear, articulate female voice. Default Pocket TTS voice.",
     gender: "female",
     accent: "Pocket TTS",
-    engine: "pocket-tts",
-    agent: "Detective Holmes"
+    engine: "pocket-tts"
   },
   "fantine": {
     name: "Fantine",
