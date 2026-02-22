@@ -1,344 +1,254 @@
-# Unicorn-Orator
+# 🦄 Unicorn Orator - Lightweight TTS with Hardware Acceleration
 
-Multi-platform Text-to-Speech (TTS) service with automatic hardware acceleration support.
+<div align="center">
+  <img src="kokoro-tts/static/Unicorn_Orator.png" alt="Unicorn Orator Logo" width="200"/>
+  
+  [![Docker](https://img.shields.io/docker/pulls/magicunicorn/unicorn-orator?style=flat-square)](https://hub.docker.com/r/magicunicorn/unicorn-orator)
+  [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+  [![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-green?style=flat-square)](https://platform.openai.com/docs/api-reference/audio/createSpeech)
+  
+  **Efficient text-to-speech that runs on Intel iGPU, freeing your GPU for AI inference**
+  
+  [Web Interface](http://localhost:8885/web) | [Docker Hub](https://hub.docker.com/r/magicunicorn/unicorn-orator) | [API Docs](#api-usage)
+</div>
 
-## Overview
+---
 
-Unicorn-Orator automatically detects and uses the best available compute backend:
+## 🎯 Why Unicorn Orator?
 
-### Production Ready ✅
-- **AMD Radeon GPU (gfx1151)**: AMD Radeon 8060S (RDNA 3.5, Strix Halo) - ✅ **0.88× realtime** with VibeVoice-1.5B
-- **XDNA2 NPU**: Strix Halo NPU (AMD Ryzen AI MAX+ 395) - ✅ **32.4× realtime** with Kokoro
-- **XDNA1 NPU**: Phoenix/Hawk Point NPU (AMD Ryzen 7040/8040 series) - ✅ **220× realtime** with Whisper
+**The Problem**: Running TTS alongside LLMs fights for GPU resources, slowing down inference and increasing latency.
 
-### Under Development 🔧
-- **XDNA2 NPU + GPU Hybrid**: NPU for LLM layers, GPU for diffusion (in progress)
-- **CPU Fallback**: Software-only mode for systems without acceleration
+**Our Solution**: Unicorn Orator offloads TTS to Intel integrated graphics or AMD NPUs, leaving your discrete GPU free for what it does best - running large language models.
 
-## Features
+### Key Benefits
 
-### TTS Models
-- **VibeVoice-1.5B**: Multi-speaker TTS with 3B parameters (GPU-accelerated)
-- **Kokoro**: High-quality single-speaker TTS (NPU-accelerated)
+- **🚀 Free Your GPU**: TTS runs on iGPU/NPU, preserving discrete GPU for LLM inference
+- **⚡ Resource Efficient**: Uses ~15W on iGPU vs 100W+ on discrete GPU
+- **🎭 50+ Quality Voices**: Kokoro v0.19 with diverse accents and styles
+- **🔌 OpenAI Compatible**: Drop-in replacement, no code changes needed
+- **🐳 Production Ready**: Docker image available, battle-tested deployment
 
-### Hardware Acceleration
-- **GPU Acceleration**: AMD RDNA 3.5 (gfx1151) with hipBLASLt optimizations
-- **NPU Acceleration**: AMD XDNA1/XDNA2 with custom BF16 kernels
-- **Hybrid Mode**: NPU + GPU coordination (experimental)
-- **Automatic Detection**: Selects optimal backend based on hardware
+## 🖼️ Web Interface
 
-### Quality & Performance
-- Professional-grade audio output (24 kHz, 16-bit)
-- Multiple voice options and styles
-- Near-realtime or better performance
-- Low power consumption (5-45W depending on backend)
+<div align="center">
+  <img src="assets/unicorn-orator-interface.png" alt="Unicorn Orator Web Interface" width="600"/>
+  <br>
+  <i>Clean, intuitive interface with 50+ voices and advanced settings</i>
+</div>
 
-## Architecture
+## 🚀 Quick Start
 
-```
-Unicorn-Orator/
-├── api.py                    # Main entry point with platform detection
-├── runtime/
-│   └── platform_detector.py  # Auto-detects NPU/CPU
-├── xdna1/                    # Phoenix/Hawk Point implementation
-│   ├── server.py
-│   ├── Dockerfile
-│   ├── requirements.txt
-│   ├── phoneme_mapping.json
-│   ├── static/
-│   └── docker-compose.yml
-├── xdna2/                    # Strix Point implementation (WIP)
-│   ├── kernels/              # Custom NPU kernels
-│   ├── runtime/              # XDNA2 runtime integration
-│   └── README_XDNA2.md
-└── cpu/                      # CPU fallback (planned)
-```
-
-## Quick Start
-
-### Using Docker
+### Using Docker (Recommended)
 
 ```bash
-cd xdna1
-docker-compose up
+# Pull and run the pre-built image
+docker run -d --name unicorn-orator \
+  -p 8885:8880 \
+  -v $(pwd)/kokoro-tts/models:/app/models:ro \
+  --device /dev/dri:/dev/dri \
+  --group-add video \
+  magicunicorn/unicorn-orator:intel-igpu-v1.0
+
+# Visit http://localhost:8885/web for the interface
 ```
 
-### Standalone
+### From Source
 
 ```bash
-pip install -r xdna1/requirements.txt
-python api.py
+git clone https://github.com/Unicorn-Commander/Unicorn-Orator.git
+cd Unicorn-Orator
+docker-compose up -d
 ```
 
-## API Endpoints
+## 💡 Technical Innovation
 
-### POST /v1/audio/speech
+### Intel iGPU Optimization
+We've optimized Kokoro TTS to run efficiently on Intel integrated graphics via OpenVINO:
 
-Generate speech from text.
+- **Hardware Detection**: Automatically detects and uses Intel Xe/Arc iGPUs
+- **FP16 Inference**: Maintains quality while doubling throughput
+- **Minimal Memory**: ~300MB VRAM usage, leaving room for other tasks
+- **Power Efficient**: 10-15W TDP vs 75-350W for discrete GPUs
 
-**Parameters:**
-- `text`: Text to synthesize
-- `voice`: Voice ID (optional, default: first available voice)
-- `speed`: Speech speed multiplier (optional, default: 1.0)
+### AMD NPU Support (Phoenix/Hawk Point)
+For Ryzen AI laptops (7040/8040 series) with Phoenix NPU:
 
-**Example:**
+**Current Status** (October 2025):
+- **Hardware**: Phoenix NPU operational via XRT 2.20.0
+- **Available Kernels**: 69 compiled MLIR-AIE2 XCLBINs
+- **Tested**: 16×16 matmul kernel (1.0 correlation, 0.484ms/op)
+- **Integration**: Research phase for Kokoro TTS architecture
+- **Power Target**: <10W for continuous synthesis
 
-```bash
-curl -X POST http://localhost:9001/v1/audio/speech \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Hello, world!", "voice": "af_heart"}' \
-  --output output.wav
-```
+**Kernels Available** (from Unicorn-Amanuensis project):
+- ✅ 16×16 INT8 matrix multiply
+- ✅ Production mel spectrogram
+- ✅ GELU, LayerNorm activations
+- ⚠️ Attention mechanisms (debugging)
 
-### GET /voices
+**Note**: Kokoro TTS architecture differs from Whisper. NPU kernel integration requires architecture-specific adaptation. Shared kernels (matmul, activations) can potentially accelerate Kokoro's encoder/decoder components.
 
-List available voices.
+See [unicorn-npu-core](https://github.com/Unicorn-Commander/unicorn-npu-core) for kernel management.
 
-```bash
-curl http://localhost:9001/voices
-```
+### Performance Comparison
 
-### GET /health
+| Hardware | Power Usage | VRAM | Speed | Purpose |
+|----------|-------------|------|-------|---------|
+| Intel iGPU | 15W | 300MB | 5x realtime | **TTS (This Project)** |
+| AMD NPU | 10W | 256MB | 4x realtime | **TTS (Experimental)** |
+| NVIDIA 4090 | 350W | 2GB | 20x realtime | Better used for LLMs |
+| CPU (i7) | 45W | N/A | 2x realtime | Fallback option |
 
-Health check endpoint.
+## 📡 API Usage
 
-```bash
-curl http://localhost:9001/health
-```
-
-### GET /platform
-
-Get current platform and backend information.
-
-```bash
-curl http://localhost:9001/platform
-```
-
-## Environment Variables
-
-### Model Configuration
-- `ONNX_MODEL`: Path to ONNX model file
-- `VOICE_EMBEDDINGS`: Path to voice embeddings file
-- `DEFAULT_VOICE`: Default voice to use
-
-### Platform Override
-- `NPU_PLATFORM`: Force specific platform (xdna1, xdna2, cpu)
-
-## Platform Support Status
-
-| Platform | Status | Performance | Notes |
-|----------|--------|-------------|-------|
-| XDNA2 (Strix Halo) | ✅ **Production** | **2.8× realtime** | Phase 3 complete, NPU BERT + optimized ONNX |
-| XDNA1 (Phoenix/Hawk Point) | ✅ Production | 32.4× realtime | Fully tested with ONNX |
-| CPU | Fallback | 1× realtime | Uses XDNA1 backend in CPU mode |
-
-## 🎉 XDNA2 Phase 3: Production Ready! (November 2025)
-
-### Achievement: Optimized NPU-Accelerated TTS
-
-The XDNA2 implementation is now **production-ready** with Phase 3 complete:
-
-**What We Built:**
-- ✅ **NPU BERT Encoder**: Runs on AMD XDNA2 NPU (7.5× realtime)
-- ✅ **Optimized ONNX Graph**: BERT nodes removed, accepts NPU BERT output directly
-- ✅ **No Duplication**: BERT runs **once** (NPU only), not twice
-- ✅ **Perfect Audio Quality**: Matches baseline, user-validated
-- ✅ **2.8× Realtime**: Total synthesis time (NPU BERT + optimized ONNX)
-
-**The Critical Bug We Fixed:**
-- **Problem**: Initial Phase 3 produced 36.7% shorter audio with artifacts
-- **Root Cause**: BERT has final projection layer (768→512 dims) that NPU doesn't include
-- **Solution**: Extract projection weights, apply to NPU output before ONNX injection
-- **Result**: Perfect duration match, identical quality to baseline
-
-**Phase 3 Architecture:**
-```
-Text → Phonemes → Tokens
-           ↓
-    NPU BERT Encoder (768-dim)
-           ↓
-    Final Projection (768→512)
-           ↓
-    Modified ONNX (no BERT nodes)
-           ↓
-    Audio Output (24kHz)
-```
-
-**Performance Comparison:**
-- **Phase 2** (NPU + Full ONNX): BERT runs twice, 0.704s total
-- **Phase 3** (NPU + Modified ONNX): BERT runs once, 0.706s total ✅
-- **Efficiency**: Eliminates duplicate BERT computation
-- **Quality**: "Almost exactly the same" (user A/B validation)
-
-**Documentation:**
-- Implementation: `xdna2/PHASE3_FINAL_SUCCESS.md`
-- Quick start: `xdna2/HYBRID_QUICK_START.md`
-- All reports: `xdna2/PHASE3_*.md`
-
-## XDNA2 NPU Support + BF16 Workaround
-
-### Status: INTEGRATED ✅
-
-The XDNA2 implementation is ready for hardware testing with an automatic BF16 workaround integrated.
-
-### AMD XDNA2 BF16 Bug
-
-AMD XDNA2 NPU has a critical hardware bug where BF16 matrix multiplication produces **789-2823% errors** with negative values. The XDNA2 implementation includes an automatic workaround:
-
-| Configuration | Error Rate | Performance | Audio Quality |
-|--------------|-----------|-------------|---------------|
-| **With Workaround** ✅ | **3.55%** | **2.8× realtime** | **High** |
-| Without Workaround ❌ | 789-2823% | Same | Garbage |
-| CPU Fallback | 0% | 1× realtime | High |
-
-### How It Works
-
-1. **Scale inputs** to [0,1] range before NPU execution
-2. **Execute** BF16 matmul operations on NPU
-3. **Reconstruct outputs** to original scale
-4. **Achieve** 3.55% error (vs 789% without workaround)
-5. **Performance overhead**: < 5% (negligible)
-
-### Configuration
-
-**Environment Variables**:
-```bash
-# Enable/disable BF16 workaround (default: enabled)
-export USE_BF16_WORKAROUND=true
-
-# Enable/disable NPU (default: enabled)
-export NPU_ENABLED=true
-```
-
-**Per-Request Override**:
-```json
-{
-  "text": "Hello world",
-  "voice": "af_heart",
-  "use_bf16_workaround": true
-}
-```
-
-### Migration Guide: CPU/XDNA1 → XDNA2
-
-#### Prerequisites
-
-- AMD Strix Halo APU (Ryzen AI 300 series)
-- XDNA2 NPU drivers installed
-- Python 3.10+
-- Docker (optional, for MagiCode integration)
-
-#### Installation
-
-```bash
-# 1. Install dependencies
-cd /path/to/unicorn-orator/xdna2
-pip install -r requirements.txt
-
-# 2. Set environment variables
-export USE_BF16_WORKAROUND=true  # REQUIRED for XDNA2
-export NPU_ENABLED=true
-
-# 3. Start server
-python server.py
-```
-
-#### Verification
-
-```bash
-# Check platform status
-curl http://localhost:9001/platform
-
-# Should return:
-# {
-#   "service": "Unicorn-Orator",
-#   "platform": "XDNA2",
-#   "npu_enabled": true,
-#   "bf16_workaround": {
-#     "enabled": true,
-#     "error_reduction": "789% → 3.55%"
-#   }
-# }
-```
-
-#### Key Differences
-
-| Feature | XDNA1 | XDNA2 |
-|---------|-------|-------|
-| NPU Architecture | Phoenix/Hawk Point | Strix Halo |
-| BF16 Workaround | Not needed | **REQUIRED** |
-| Performance Target | 32.4× realtime | **2.8× realtime** (Phase 3) |
-| Power Draw | 6-15W | 6-15W |
-| Configuration | Standard | BF16 workaround enabled |
-
-#### Code Changes
-
-No application code changes required! The workaround is transparent:
+### OpenAI-Compatible Endpoint
 
 ```python
-# Old code (XDNA1)
-audio = synthesize_speech(text, voice)
+import requests
 
-# New code (XDNA2) - same API!
-audio = synthesize_speech(text, voice)
-# BF16 workaround applied automatically
+# Works exactly like OpenAI's API
+response = requests.post('http://localhost:8885/v1/audio/speech',
+    json={
+        'text': 'Hello from Unicorn Orator!',
+        'voice': 'af_heart',  # 50+ voices available
+        'speed': 1.0
+    }
+)
+
+with open('output.wav', 'wb') as f:
+    f.write(response.content)
 ```
 
-#### Troubleshooting
+### Available Voices (Selection)
 
-**High error rate (> 10%)**:
-- Ensure `USE_BF16_WORKAROUND=true` is set
-- Check `/stats` endpoint for workaround status
+| Voice ID | Description | Best For |
+|----------|-------------|----------|
+| `af_heart` | Warm, friendly female | General narration |
+| `am_michael` | Professional male | News/corporate |
+| `bf_emma` | British female | Audiobooks |
+| `af_bella` | Young American female | Social media |
+| `bm_george` | British male | Documentation |
 
-**NPU not detected**:
-- Verify XDNA2 drivers installed
-- Check `dmesg | grep amdxdna`
+[Full voice list available at /voices endpoint]
 
-**Performance lower than expected**:
-- Verify hardware (Strix Halo required)
-- Check system load (`htop`)
+## 🏗️ Architecture
 
-### Documentation
-
-- **Deployment Guide**: `xdna2/DEPLOYMENT_GUIDE.md` - Installation, configuration, testing
-- **API Reference**: `xdna2/API_REFERENCE.md` - Complete REST API documentation
-- **Implementation Notes**: `xdna2/IMPLEMENTATION_NOTES.md` - Technical details
-- **Integration Summary**: `xdna2/INTEGRATION_SUMMARY.md` - Integration overview
-
-## Development
-
-### Adding XDNA2 Support
-
-XDNA2 implementation is tracked in `xdna2/README_XDNA2.md`. Key components:
-
-1. **Custom Kernels**: INT8 quantized operations for NPU
-2. **Runtime Integration**: XDNA2 device management
-3. **Model Optimization**: NPU-specific model transformations
-
-### Testing Platform Detection
-
-```python
-from runtime.platform_detector import get_platform_info
-
-info = get_platform_info()
-print(info)
+```
+Your System:
+┌──────────────────┬──────────────────┐
+│   Discrete GPU   │   Intel iGPU     │
+│   (RTX/Arc/RX)   │   (Xe Graphics)  │
+│                  │                  │
+│   Running:       │   Running:       │
+│   - LLMs         │   - Unicorn TTS  │
+│   - Stable Diff  │   - Video decode │
+│   - ML Training  │   - Display      │
+└──────────────────┴──────────────────┘
+         │                  │
+         └──────┬───────────┘
+                │
+        [High Performance AI]
+         Without Competition
 ```
 
-## Integration with CC-1L
+## 🔮 Roadmap
 
-This repository is designed to be used as a Git submodule in the CC-1L project:
+### Current Release (v1.0)
+- ✅ Intel iGPU support via OpenVINO
+- ✅ 50+ Kokoro voices
+- ✅ OpenAI API compatibility
+- ✅ Docker deployment
+- ✅ Web interface
 
+### Planned Features
+- [ ] Real-time streaming
+- [ ] AMD NPU production support
+- [ ] Voice cloning (ethical use only)
+- [ ] SSML support
+- [ ] Batch processing API
+- [ ] Kubernetes operator
+
+### Future Exploration
+- [ ] Apple Neural Engine support
+- [ ] Qualcomm Hexagon DSP
+- [ ] Edge deployment (Jetson, Pi 5)
+- [ ] WebGPU browser runtime
+
+## 🛠️ Building From Source
+
+### Prerequisites
+- Docker & Docker Compose
+- Intel CPU with Xe/Arc graphics (or AMD Ryzen AI)
+- 8GB RAM minimum
+- Ubuntu 22.04+ or Windows 11 WSL2
+
+### Build Steps
 ```bash
-cd CC-1L
-git submodule add https://github.com/Unicorn-Commander/Unicorn-Orator.git npu-services/unicorn-orator
+# Clone repository
+git clone https://github.com/Unicorn-Commander/Unicorn-Orator.git
+cd Unicorn-Orator
+
+# Download models (one-time, ~350MB)
+./download_models.sh
+
+# Build with hardware detection
+./build.sh
+
+# Run
+docker-compose up -d
 ```
 
-## License
+## 📊 Benchmarks
 
-Proprietary - Unicorn Commander Project
+Testing setup: Intel Core i7-13700K with Intel UHD 770 iGPU
 
-## Related Projects
+| Text Length | Generation Time | Realtime Factor |
+|-------------|-----------------|-----------------|
+| 1 sentence | 180ms | 5.5x |
+| 1 paragraph | 950ms | 5.2x |
+| 1 page | 4.2s | 5.0x |
 
-- **Unicorn-Amanuensis**: STT service (sister project)
-- **unicorn-cpu-core**: Shared utilities library
-- **CC-1L**: Main integration project
+*Realtime factor = audio duration / generation time*
+
+## 🤝 Contributing
+
+We especially welcome contributions for:
+- Hardware optimization (OpenVINO, XDNA, CoreML)
+- Additional TTS models beyond Kokoro
+- Voice training and fine-tuning
+- Performance improvements
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## 🙏 Acknowledgments
+
+- **[Kokoro TTS](https://github.com/thewh1teagle/kokoro)** - The excellent TTS model we build upon
+- **[OpenVINO Toolkit](https://github.com/openvinotoolkit/openvino)** - Intel's inference optimization framework
+- **Hugging Face** - Model hosting and community
+
+## 📜 License
+
+MIT License - See [LICENSE](LICENSE) for details
+
+## 🏢 UC-1 Pro Ecosystem
+
+Unicorn Orator is part of the UC-1 Pro AI infrastructure suite:
+
+| Service | Purpose | Port |
+|---------|---------|------|
+| **Unicorn Orator** | Text-to-speech | 8885 |
+| [Unicorn Amanuensis](https://github.com/Unicorn-Commander/Unicorn-Amanuensis) | Speech-to-text | 8886 |
+| Unicorn vLLM | LLM inference | 8000 |
+| Open-WebUI | Chat interface | 3000 |
+
+---
+
+<div align="center">
+  <b>Free your GPU. Enhance your AI.</b><br><br>
+  <a href="https://hub.docker.com/r/magicunicorn/unicorn-orator">🐳 Docker Hub</a> •
+  <a href="https://github.com/Unicorn-Commander/Unicorn-Orator/issues">🐛 Issues</a> •
+  <a href="https://github.com/Unicorn-Commander/Unicorn-Orator/discussions">💬 Discussions</a>
+  
+  <br><br>
+  <i>Built by Magic Unicorn Unconventional Technology & Stuff Inc.</i>
+</div>

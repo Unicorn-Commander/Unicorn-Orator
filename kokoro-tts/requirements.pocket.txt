@@ -1,0 +1,13 @@
+# Pocket TTS engine (Kyutai Labs, 100M params)
+pocket-tts>=1.1.0
+
+# FastAPI server
+fastapi==0.110.0
+uvicorn==0.27.1
+
+# Audio processing
+numpy>=1.26.4
+soundfile==0.12.1
+
+# Kokoro ONNX fallback (optional — loaded if models present)
+onnxruntime

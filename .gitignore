@@ -4,11 +4,13 @@ __pycache__/
 *$py.class
 *.so
 .Python
-env/
-venv/
-*.egg-info/
-dist/
 build/
+dist/
+*.egg-info/
+
+# Virtual environments
+venv/
+env/
 
 # Models and data
 *.pt
@@ -18,6 +20,11 @@ build/
 models/
 data/
 cache/
+kokoro-tts/models/
+*.xclbin
+
+# Voice safetensors (binary, loaded at runtime)
+kokoro-tts/voices/*.safetensors
 
 # Logs
 *.log
@@ -46,19 +53,13 @@ secrets/
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
+
+# Cache directories
+.cache/
 
 # Docker
 .dockerignore
 
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Audio files
-*.wav
-*.mp3
-*.flac
-output/
+# OS
+.DS_Store
+Thumbs.db
