@@ -4,7 +4,7 @@
   <img src="kokoro-tts/static/Unicorn_Orator.png" alt="Unicorn Orator Logo" width="200"/>
   
   [![Docker](https://img.shields.io/docker/pulls/magicunicorn/unicorn-orator?style=flat-square)](https://hub.docker.com/r/magicunicorn/unicorn-orator)
-  [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+  [![License](https://img.shields.io/badge/License-Apache--2.0-blue?style=flat-square)](LICENSE)
   [![OpenAI Compatible](https://img.shields.io/badge/OpenAI-Compatible-green?style=flat-square)](https://platform.openai.com/docs/api-reference/audio/createSpeech)
   
   **Efficient text-to-speech that runs on Intel iGPU, freeing your GPU for AI inference**
@@ -228,7 +228,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## 📜 License
 
-MIT License - See [LICENSE](LICENSE) for details
+Unicorn Orator is licensed under the [Apache License 2.0](LICENSE). The licence covers the code; the Magic Unicorn and Unicorn Commander names and logos are trademarks (see [TRADEMARKS.md](TRADEMARKS.md)).
 
 ## 🏢 UC-1 Pro Ecosystem
 
